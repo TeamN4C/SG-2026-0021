@@ -18,10 +18,7 @@ RUN git clone \
 
 WORKDIR /src
 RUN cmake -S . -B build \
-        -DCMAKE_BUILD_TYPE=Debug \
-        -DCMAKE_C_FLAGS="-O1 -g -fsanitize=address -fno-omit-frame-pointer" \
-        -DCMAKE_CXX_FLAGS="-O1 -g -fsanitize=address -fno-omit-frame-pointer" \
-        -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" \
+        -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=OFF \
         -DGGML_NATIVE=OFF \
         -DGGML_RPC=ON \
@@ -36,10 +33,9 @@ RUN cmake -S . -B build \
 FROM ubuntu:24.04
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends binutils libasan8 libgomp1 \
+    && apt-get install -y --no-install-recommends bash libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /src/build/bin/rpc-server /usr/local/bin/rpc-server
-ENV ASAN_OPTIONS="abort_on_error=1:halt_on_error=1:detect_leaks=0:print_stacktrace=1:allow_addr2line=1"
 EXPOSE 50052
 ENTRYPOINT ["/usr/local/bin/rpc-server"]
 CMD ["--host", "0.0.0.0", "--port", "50052", "--threads", "1", "--device", "CPU"]
